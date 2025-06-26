@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOIA Automation Dashboard | FQHC HIPAA Solutions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #1a365d;
+            --secondary: #2c5282;
+            --accent: #e53e3e;
+            --light: #f7fafc;
+            --dark: #1a202c;
+            --success: #38a169;
+            --warning: #dd6b20;
+            --danger: #c53030;
+            --gray: #718096;
+            --card-bg: rgba(26, 32, 44, 0.85);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: var(--light);
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            color: #4fd1c5;
+        }
+        
+        .logo-text {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #4fd1c5, #81e6d9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-family: 'Source Code Pro', monospace;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a0aec0;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border: 1px solid rgba(74, 85, 104, 0.5);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(74, 85, 104, 0.5);
+        }
+        
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #81e6d9;
+        }
+        
+        .card-icon {
+            background: var(--secondary);
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #cbd5e0;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #2d3748;
+            background: rgba(26, 32, 44, 0.7);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+        
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #4fd1c5;
+            box-shadow: 0 0 0 3px rgba(79, 209, 197, 0.2);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .btn-accent {
+            background: linear-gradient(to right, #e53e3e, #c53030);
+        }
+        
+        .btn-success {
+            background: linear-gradient(to right, #38a169, #2f855a);
+        }
+        
+        .request-preview {
+            background: rgba(26, 32, 44, 0.7);
+            border-radius: 15px;
+            border: 1px solid rgba(74, 85, 104, 0.5);
+            padding: 25px;
+            margin-top: 20px;
+            font-family: 'Source Code Pro', monospace;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: rgba(45, 55, 72, 0.6);
+        }
+        
+        .status-indicator.pending {
+            border-left: 4px solid #f6ad55;
+        }
+        
+        .status-indicator.completed {
+            border-left: 4px solid #38a169;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .status-dot.pending {
+            background: #f6ad55;
+        }
+        
+        .status-dot.completed {
+            background: #38a169;
+        }
+        
+        .request-item {
+            background: rgba(45, 55, 72, 0.6);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            border-left: 4px solid #4fd1c5;
+        }
+        
+        .request-item:hover {
+            background: rgba(56, 66, 83, 0.8);
+            transform: translateY(-2px);
+        }
+        
+        .request-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #81e6d9;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .request-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: #a0aec0;
+            margin-bottom: 10px;
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(26, 32, 44, 0.7);
+            border: 1px solid #2d3748;
+            color: #cbd5e0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+        }
+        
+        .action-btn:hover {
+            background: rgba(56, 66, 83, 0.8);
+        }
+        
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: rgba(26, 32, 44, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(74, 85, 104, 0.5);
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(to right, #4fd1c5, #81e6d9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 50px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #a0aec0;
+            font-size: 0.9rem;
+        }
+        
+        .hpsa-search {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .hpsa-search input {
+            flex: 1;
+        }
+        
+        .instructions {
+            background: rgba(56, 66, 83, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 4px solid #4fd1c5;
+        }
+        
+        .instructions ol {
+            padding-left: 25px;
+            margin-top: 15px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .highlight {
+            background: rgba(79, 209, 197, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #4fd1c5;
+        }
+        
+        @media (max-width: 600px) {
+            .card {
+                padding: 20px;
+            }
+            
+            .request-meta {
+                flex-direction: column;
+                gap: 5px;
+            }
+            
+            .request-actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-file-contract"></i>
+                <div class="logo-text">FOIA AUTOMATION DASHBOARD</div>
+            </div>
+            <p class="subtitle">Streamline evidence collection for USCIS petitions and clinic security audits. Generate, track, and manage FOIA requests in one place.</p>
+        </header>
+
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-label">Total Requests</div>
+                <div class="stat-value" id="totalRequests">12</div>
+                <div class="stat-label">This Month</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value" id="completedRequests">8</div>
+                <div class="stat-label">Ready for USCIS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg. Response</div>
+                <div class="stat-value" id="avgResponse">18</div>
+                <div class="stat-label">Days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Clinics Secured</div>
+                <div class="stat-value" id="clinicsSecured">6</div>
+                <div class="stat-label">Using Evidence</div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Create New FOIA Request</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <h3><i class="fas fa-info-circle"></i> How to Use This Tool</h3>
+                    <ol>
+                        <li>Enter clinic details and HPSA code</li>
+                        <li>Customize your FOIA request parameters</li>
+                        <li>Preview and generate the request</li>
+                        <li>Track status until HHS response arrives</li>
+                        <li>Add evidence to your USCIS portfolio</li>
+                    </ol>
+                </div>
+                
+                <div class="input-group">
+                    <label for="clinicName">Clinic Name</label>
+                    <input type="text" id="clinicName" placeholder="Enter clinic name" value="Detroit Community Health Center">
+                </div>
+                
+                <div class="input-group">
+                    <label for="hpsaCode">HPSA Code <span class="highlight">(Required)</span></label>
+                    <div class="hpsa-search">
+                        <input type="text" id="hpsaCode" placeholder="e.g., MI-04240" value="MI-04240">
+                        <button class="btn" id="searchHPSA"><i class="fas fa-search"></i> Verify</button>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="clinicAddress">Clinic Address</label>
+                    <input type="text" id="clinicAddress" placeholder="Full clinic address" value="123 Healthcare Ave, Detroit, MI 48201">
+                </div>
+                
+                <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="input-group">
+                        <label for="timeRange">Time Range</label>
+                        <select id="timeRange">
+                            <option value="3">Last 3 years</option>
+                            <option value="5" selected>Last 5 years</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="requestType">Request Type</label>
+                        <select id="requestType">
+                            <option value="breaches">Security Breaches Only</option>
+                            <option value="probes" selected>Cyber Probes + Breaches</option>
+                            <option value="full">Full Security History</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="niwReference">NIW Petition Reference</label>
+                    <textarea id="niwReference" rows="3">Supporting evidence for USCIS NIW Petition (Receipt# XYZ12345). This data will demonstrate national importance of my work protecting vulnerable healthcare clinics.</textarea>
+                </div>
+                
+                <div class="input-group">
+                    <label for="foiaTemplate">FOIA Template</label>
+                    <select id="foiaTemplate">
+                        <option value="standard">Standard Request</option>
+                        <option value="expedited" selected>Expedited Request</option>
+                        <option value="chinese">Chinese Threat Focus</option>
+                        <option value="quantum">Quantum Vulnerability</option>
+                    </select>
+                </div>
+                
+                <button id="previewBtn" class="btn btn-block"><i class="fas fa-eye"></i> Preview FOIA Request</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Request Preview & Submission</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                </div>
+                
+                <div class="status-indicator pending">
+                    <div class="status-dot pending"></div>
+                    <div>DRAFT REQUEST - READY FOR FINAL REVIEW</div>
+                </div>
+                
+                <div class="request-preview" id="requestPreview">
+[Preview will appear here]
+                </div>
+                
+                <div class="input-group">
+                    <label for="recipient">Recipient Address</label>
+                    <input type="text" id="recipient" value="U.S. Department of Health & Human Services, FOIA Office, 200 Independence Ave SW, Washington, D.C. 20201">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                    <button id="saveDraftBtn" class="btn"><i class="fas fa-save"></i> Save Draft</button>
+                    <button id="generateBtn" class="btn btn-success"><i class="fas fa-file-pdf"></i> Generate PDF</button>
+                </div>
+                
+                <button id="submitBtn" class="btn btn-accent btn-block" style="margin-top: 15px;"><i class="fas fa-paper-plane"></i> Submit to HHS via Fax</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">FOIA Request Tracker</h2>
+                <div class="card-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+            </div>
+            
+            <div id="requestsList">
+                <div class="request-item">
+                    <div class="request-title">
+                        <span>Grand Rapids FQHC (MI-04120)</span>
+                        <span class="status-badge completed">Completed</span>
+                    </div>
+                    <div class="request-meta">
+                        <div><i class="far fa-calendar"></i> Submitted: 06/15/2025</div>
+                        <div><i class="far fa-clock"></i> Response: 07/02/2025 (17 days)</div>
+                        <div><i class="fas fa-file-contract"></i> 42 pages received</div>
+                    </div>
+                    <div>Chinese cyber probes: 12 incidents confirmed. Added to USCIS Portfolio.</div>
+                    <div class="request-actions">
+                        <button class="action-btn"><i class="fas fa-eye"></i> View Response</button>
+                        <button class="action-btn"><i class="fas fa-download"></i> Download PDF</button>
+                        <button class="action-btn"><i class="fas fa-link"></i> Add to Portfolio</button>
+                    </div>
+                </div>
+                
+                <div class="request-item">
+                    <div class="request-title">
+                        <span>Lansing Health Partners (MI-03875)</span>
+                        <span class="status-badge pending">Pending</span>
+                    </div>
+                    <div class="request-meta">
+                        <div><i class="far fa-calendar"></i> Submitted: 06/24/2025</div>
+                        <div><i class="far fa-clock"></i> Expected: 07/15/2025</div>
+                        <div><i class="fas fa-exclamation-triangle"></i> Expedited request</div>
+                    </div>
+                    <div>Focus: Quantum vulnerability probes and hardware breaches</div>
+                    <div class="request-actions">
+                        <button class="action-btn"><i class="fas fa-edit"></i> Edit Request</button>
+                        <button class="action-btn"><i class="fas fa-sync-alt"></i> Check Status</button>
+                    </div>
+                </div>
+                
+                <div class="request-item">
+                    <div class="request-title">
+                        <span>Detroit Community Health (MI-04240)</span>
+                        <span class="status-badge completed">Completed</span>
+                    </div>
+                    <div class="request-meta">
+                        <div><i class="far fa-calendar"></i> Submitted: 06/10/2025</div>
+                        <div><i class="far fa-clock"></i> Response: 06/25/2025 (15 days)</div>
+                        <div><i class="fas fa-file-contract"></i> 28 pages received</div>
+                    </div>
+                    <div>Identified 9 Chinese IP breaches. Used in $7k audit contract.</div>
+                    <div class="request-actions">
+                        <button class="action-btn"><i class="fas fa-eye"></i> View Response</button>
+                        <button class="action-btn"><i class="fas fa-download"></i> Download PDF</button>
+                        <button class="action-btn"><i class="fas fa-link"></i> Add to Portfolio</button>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="newRequestBtn" class="btn" style="margin-top: 20px;"><i class="fas fa-plus"></i> Create New Request</button>
+        </div>
+        
+        <footer>
+            <p>FOIA Automation Dashboard | FQHC HIPAA Solutions LLC</p>
+            <p>© 2025 National Interest Waiver Evidence System | HHS FOIA Compliance Tool</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const previewBtn = document.getElementById('previewBtn');
+            const generateBtn = document.getElementById('generateBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const requestPreview = document.getElementById('requestPreview');
+            
+            // Sample FOIA templates
+            const foiaTemplates = {
+                standard: `Freedom of Information Act Request
+
+To: U.S. Department of Health & Human Services
+FOIA Office
+200 Independence Ave SW
+Washington, D.C. 20201
+
+Subject: FOIA Request - Clinic Security Records
+
+Under the Freedom of Information Act, 5 U.S.C. § 552, I request access to and copies of:
+
+1. All records of security breaches and cyber incidents
+2. Documentation of foreign IP probes
+3. Compliance reports and mitigation actions
+
+For: [CLINIC_NAME]
+HPSA Code: [HPSA_CODE]
+Address: [CLINIC_ADDRESS]
+
+Timeframe: Last [YEARS] years
+
+Please expedite processing as this information is required for ongoing security improvements at federally qualified health centers serving vulnerable populations.
+
+Sincerely,
+[YOUR_NAME]
+FQHC HIPAA Solutions LLC`,
+                
+                expedited: `URGENT: EXPEDITED FOIA REQUEST
+
+To: HHS FOIA Office
+200 Independence Ave SW
+Washington, D.C. 20201
+
+Subject: EXPEDITED REQUEST - Clinic Security Breaches (HPSA: [HPSA_CODE])
+
+Pursuant to 5 U.S.C. § 552(b)(7)(E), I request expedited processing for:
+
+ALL records pertaining to:
+- Security breaches
+- Cyber incidents
+- Foreign IP probes (especially Chinese origins)
+- Compliance violations
+
+For: [CLINIC_NAME]
+Address: [CLINIC_ADDRESS]
+
+Timeframe: [YEARS] years
+
+RATIONALE FOR EXPEDITED PROCESSING:
+This information is critical for immediate security enhancements at a Federally Qualified Health Center serving an underserved population (HPSA [HPSA_CODE]). Delay could result in imminent threats to patient data security.
+
+[NIW_REFERENCE]
+
+Please provide responsive records within 10 business days as permitted under FOIA guidelines for urgent healthcare safety matters.
+
+Sincerely,
+[YOUR_NAME]
+FQHC HIPAA Solutions LLC`,
+                
+                chinese: `FOIA REQUEST - CHINESE CYBER THREATS
+
+To: HHS FOIA Office
+200 Independence Ave SW
+Washington, D.C. 20201
+
+Subject: Targeted FOIA Request - Chinese Cyber Probes (HPSA: [HPSA_CODE])
+
+Under the Freedom of Information Act, I request:
+
+1. Records of all cyber probes originating from Chinese IP addresses
+2. Incidents involving hardware manufactured by Huawei, ZTE, or other Chinese companies
+3. Breaches potentially linked to state-sponsored actors
+4. Mitigation reports specific to Chinese threats
+
+For: [CLINIC_NAME]
+HPSA: [HPSA_CODE]
+Address: [CLINIC_ADDRESS]
+
+Timeframe: Last [YEARS] years
+
+This request supports national security efforts to protect healthcare infrastructure from foreign threats. The information will be used to enhance defensive measures at vulnerable clinics.
+
+[NIW_REFERENCE]
+
+Sincerely,
+[YOUR_NAME]
+FQHC HIPAA Solutions LLC`,
+                
+                quantum: `FOIA REQUEST - QUANTUM VULNERABILITY PROBES
+
+To: HHS FOIA Office
+200 Independence Ave SW
+Washington, D.C. 20201
+
+Subject: Quantum Computing Vulnerability Probes (HPSA: [HPSA_CODE])
+
+Pursuant to FOIA, I request records related to:
+
+- Cyber incidents involving quantum computing vulnerabilities
+- Probes testing encryption strength
+- Incidents where traditional encryption was compromised
+- Documentation of quantum-resistant security implementations
+
+For: [CLINIC_NAME]
+HPSA: [HPSA_CODE]
+Address: [CLINIC_ADDRESS]
+
+Timeframe: Last [YEARS] years
+
+RATIONALE:
+This clinic serves a Health Professional Shortage Area and requires evidence-based security upgrades against next-generation threats. The requested information will directly inform quantum-resistant security implementations.
+
+[NIW_REFERENCE]
+
+Sincerely,
+[YOUR_NAME]
+FQHC HIPAA Solutions LLC`
+            };
+            
+            // Preview FOIA Request
+            previewBtn.addEventListener('click', function() {
+                const clinicName = document.getElementById('clinicName').value || "Community Health Center";
+                const hpsaCode = document.getElementById('hpsaCode').value || "MI-00000";
+                const clinicAddress = document.getElementById('clinicAddress').value || "123 Main St, Anytown, USA";
+                const timeRange = document.getElementById('timeRange').value;
+                const years = timeRange === 'custom' ? 'custom range' : timeRange;
+                const requestType = document.getElementById('requestType').value;
+                const niwReference = document.getElementById('niwReference').value || "";
+                const templateType = document.getElementById('foiaTemplate').value;
+                
+                let template = foiaTemplates[templateType];
+                
+                // Replace placeholders with actual values
+                template = template.replace(/\[CLINIC_NAME\]/g, clinicName)
+                                   .replace(/\[HPSA_CODE\]/g, hpsaCode)
+                                   .replace(/\[CLINIC_ADDRESS\]/g, clinicAddress)
+                                   .replace(/\[YEARS\]/g, years)
+                                   .replace(/\[NIW_REFERENCE\]/g, niwReference);
+                
+                requestPreview.textContent = template;
+            });
+            
+            // Generate PDF
+            generateBtn.addEventListener('click', function() {
+                const pdfContent = document.getElementById('requestPreview');
+                
+                html2canvas(pdfContent).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                    const imgWidth = 190;
+                    const pageHeight = 297;
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 10;
+                    
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    const clinicName = document.getElementById('clinicName').value || "clinic";
+                    pdf.save(`FOIA-Request-${clinicName.replace(/\s+/g, '-')}.pdf`);
+                });
+            });
+            
+            // Submit Request
+            submitBtn.addEventListener('click', function() {
+                const clinicName = document.getElementById('clinicName').value || "Unknown Clinic";
+                
+                // Create notification
+                const notification = document.createElement('div');
+                notification.innerHTML = `
+                    <div style="position: fixed; top: 20px; right: 20px; background: var(--success); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000; display: flex; align-items: center;">
+                        <i class="fas fa-check-circle" style="margin-right: 10px; font-size: 1.2rem;"></i>
+                        <div>FOIA request for ${clinicName} submitted to HHS!</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(notification);
+                
+                // Remove notification after 5 seconds
+                setTimeout(() => {
+                    notification.remove();
+                }, 5000);
+            });
+            
+            // Initialize with a preview
+            previewBtn.click();
+        });
+    </script>
+</body>
+</html>
